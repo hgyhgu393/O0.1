@@ -1,19 +1,473 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { background: #000; color: #00ff00; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { border: 2px solid #00ff00; padding: 20px; text-align: center; box-shadow: 0 0 15px #00ff00; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>กำลังอัพเดทซอฟท์แวร์</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #03010a;
+    --accent1: #00f5d4;
+    --accent2: #8b5cf6;
+    --accent3: #f59e0b;
+    --glass: rgba(255,255,255,0.04);
+    --glow1: rgba(0,245,212,0.25);
+    --glow2: rgba(139,92,246,0.3);
+  }
+
+  body {
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sarabun', sans-serif;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* === ANIMATED BACKGROUND === */
+  .bg-mesh {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 20%, rgba(139,92,246,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(0,245,212,0.14) 0%, transparent 65%),
+      radial-gradient(ellipse 40% 40% at 60% 10%, rgba(245,158,11,0.09) 0%, transparent 60%),
+      #03010a;
+    animation: meshShift 12s ease-in-out infinite alternate;
+  }
+  @keyframes meshShift {
+    0%   { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(40deg); }
+  }
+
+  /* Grid lines */
+  .grid-lines {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,245,212,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,212,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridDrift 20s linear infinite;
+  }
+  @keyframes gridDrift {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(60px); }
+  }
+
+  /* Floating orbs */
+  .orb {
+    position: fixed; border-radius: 50%; filter: blur(70px); z-index: 0;
+    animation: orbFloat linear infinite;
+  }
+  .orb1 { width:320px; height:320px; background: var(--glow2); top:-80px; left:-60px; animation-duration: 18s; }
+  .orb2 { width:250px; height:250px; background: var(--glow1); bottom:-60px; right:-40px; animation-duration: 14s; animation-delay: -6s; }
+  .orb3 { width:180px; height:180px; background: rgba(245,158,11,0.12); top:50%; left:50%; transform: translate(-50%,-50%); animation-duration: 22s; animation-delay: -10s; }
+  @keyframes orbFloat {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    33%       { transform: translate(40px,-30px) scale(1.08); }
+    66%       { transform: translate(-20px, 20px) scale(0.94); }
+  }
+
+  /* Particles */
+  .particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .particle {
+    position: absolute; width: 2px; height: 2px; border-radius: 50%;
+    background: var(--accent1);
+    animation: particleDrift linear infinite;
+    opacity: 0;
+  }
+  @keyframes particleDrift {
+    0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
+    10%  { opacity: 0.8; }
+    90%  { opacity: 0.4; }
+    100% { transform: translateY(-10vh) translateX(var(--dx,20px)); opacity: 0; }
+  }
+
+  /* === MAIN CARD === */
+  .card {
+    position: relative; z-index: 10;
+    background: var(--glass);
+    border: 1px solid rgba(0,245,212,0.15);
+    border-radius: 28px;
+    padding: 56px 60px 48px;
+    max-width: 560px; width: 90%;
+    text-align: center;
+    backdrop-filter: blur(24px);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.05),
+      0 40px 80px rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+    animation: cardEntrance 1s cubic-bezier(0.16,1,0.3,1) forwards;
+    opacity: 0; transform: translateY(40px);
+  }
+  @keyframes cardEntrance {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Corner accents */
+  .card::before, .card::after {
+    content: '';
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: var(--accent1);
+    border-style: solid;
+    border-radius: 4px;
+    animation: cornerPulse 3s ease-in-out infinite;
+  }
+  .card::before { top: 16px; left: 16px; border-width: 2px 0 0 2px; }
+  .card::after  { bottom: 16px; right: 16px; border-width: 0 2px 2px 0; }
+  @keyframes cornerPulse {
+    0%, 100% { opacity: 0.5; }
+    50%       { opacity: 1; }
+  }
+
+  /* === LOADER RING === */
+  .loader-wrap {
+    position: relative;
+    width: 130px; height: 130px;
+    margin: 0 auto 36px;
+  }
+  .ring {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    animation: spin linear infinite;
+  }
+  .ring1 {
+    border-top-color: var(--accent1);
+    border-right-color: rgba(0,245,212,0.3);
+    animation-duration: 2s;
+    box-shadow: 0 0 20px rgba(0,245,212,0.4);
+  }
+  .ring2 {
+    inset: 12px;
+    border-bottom-color: var(--accent2);
+    border-left-color: rgba(139,92,246,0.3);
+    animation-duration: 3s;
+    animation-direction: reverse;
+    box-shadow: inset 0 0 16px rgba(139,92,246,0.25);
+  }
+  .ring3 {
+    inset: 24px;
+    border-top-color: var(--accent3);
+    border-right-color: rgba(245,158,11,0.3);
+    animation-duration: 4s;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ring-center {
+    position: absolute; inset: 36px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,245,212,0.15), rgba(139,92,246,0.1));
+    display: flex; align-items: center; justify-content: center;
+    animation: centerPulse 2.5s ease-in-out infinite;
+  }
+  @keyframes centerPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(0,245,212,0.3); }
+    50%       { transform: scale(1.1); box-shadow: 0 0 40px rgba(0,245,212,0.6); }
+  }
+  .center-icon { font-size: 22px; }
+
+  /* === TEXT === */
+  .label-top {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent1);
+    opacity: 0.7;
+    margin-bottom: 12px;
+    animation: fadeSlideIn 0.8s 0.3s ease forwards; opacity: 0; transform: translateY(10px);
+  }
+  .title {
+    font-family: 'Sarabun', sans-serif;
+    font-size: 32px; font-weight: 700;
+    color: #fff;
+    line-height: 1.3;
+    margin-bottom: 14px;
+    animation: fadeSlideIn 0.8s 0.5s ease forwards; opacity: 0; transform: translateY(10px);
+  }
+  .subtitle {
+    font-size: 15px; font-weight: 300;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.7;
+    margin-bottom: 36px;
+    animation: fadeSlideIn 0.8s 0.7s ease forwards; opacity: 0; transform: translateY(10px);
+  }
+  @keyframes fadeSlideIn { to { opacity: 1; transform: translateY(0); } }
+
+  /* === PROGRESS BAR === */
+  .progress-section {
+    animation: fadeSlideIn 0.8s 0.9s ease forwards; opacity: 0; transform: translateY(10px);
+  }
+  .progress-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+  }
+  .progress-pct { color: var(--accent1); font-size: 13px; }
+  .progress-track {
+    height: 6px; background: rgba(255,255,255,0.07);
+    border-radius: 99px; overflow: hidden; position: relative;
+  }
+  .progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent1));
+    border-radius: 99px;
+    box-shadow: 0 0 16px var(--glow1);
+    transition: width 0.5s ease;
+    position: relative;
+    animation: progressRun 8s ease-in-out forwards;
+  }
+  @keyframes progressRun {
+    0%   { width: 0%; }
+    20%  { width: 24%; }
+    45%  { width: 51%; }
+    65%  { width: 68%; }
+    80%  { width: 79%; }
+    90%  { width: 88%; }
+    100% { width: 94%; }
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute; right: 0; top: 0; bottom: 0;
+    width: 60px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5));
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+  @keyframes shimmer { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+
+  /* === STATUS STEPS === */
+  .steps {
+    margin-top: 28px;
+    display: flex; flex-direction: column; gap: 10px;
+    animation: fadeSlideIn 0.8s 1.1s ease forwards; opacity: 0; transform: translateY(10px);
+  }
+  .step {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+    color: rgba(255,255,255,0.35);
+    transition: all 0.6s ease;
+  }
+  .step.done   { color: rgba(255,255,255,0.75); border-color: rgba(0,245,212,0.2); background: rgba(0,245,212,0.05); }
+  .step.active { color: #fff; border-color: rgba(139,92,246,0.4); background: rgba(139,92,246,0.08); }
+  .step-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.15); flex-shrink: 0;
+    transition: all 0.6s ease;
+  }
+  .step.done   .step-dot { background: var(--accent1); box-shadow: 0 0 8px var(--accent1); }
+  .step.active .step-dot {
+    background: var(--accent2);
+    box-shadow: 0 0 10px var(--accent2);
+    animation: dotPulse 1s ease-in-out infinite;
+  }
+  @keyframes dotPulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.5); }
+  }
+  .step-text { flex: 1; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.5px; }
+  .step-check { font-size: 12px; opacity: 0; transition: opacity 0.4s; }
+  .step.done .step-check { opacity: 1; }
+
+  /* === FOOTER === */
+  .footer-note {
+    margin-top: 28px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; letter-spacing: 2px;
+    color: rgba(255,255,255,0.2);
+    animation: fadeSlideIn 0.8s 1.3s ease forwards; opacity: 0;
+  }
+  .blink { animation: blink 1.2s step-end infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* === DATA STREAM (side decoration) === */
+  .data-stream {
+    position: fixed; top: 0; right: 24px; bottom: 0;
+    z-index: 1; width: 1px;
+    background: linear-gradient(180deg, transparent, var(--accent1), transparent);
+    opacity: 0.15;
+    overflow: hidden;
+  }
+  .data-stream::before {
+    content: '';
+    position: absolute; top: -100%; left: 0; right: 0; height: 100%;
+    background: var(--accent1);
+    animation: streamFlow 4s linear infinite;
+  }
+  @keyframes streamFlow { to { top: 200%; } }
+</style>
 </head>
 <body>
-    <div class="box">
-        <h2>TAN SERVER SYSTEM</h2>
-        <p>สถานะ: ออนไลน์ (0.1s Check)</p>
-        <button onclick="alert('ระบบ Server ทำงานปกติ!')">ตรวจสอบ</button>
+
+<!-- Background layers -->
+<div class="bg-mesh"></div>
+<div class="grid-lines"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+<div class="data-stream"></div>
+
+<!-- Particles -->
+<div class="particles" id="particles"></div>
+
+<!-- Main card -->
+<div class="card">
+  <div class="label-top">SYSTEM MAINTENANCE</div>
+
+  <div class="loader-wrap">
+    <div class="ring ring1"></div>
+    <div class="ring ring2"></div>
+    <div class="ring ring3"></div>
+    <div class="ring-center">
+      <span class="center-icon">⚡</span>
     </div>
+  </div>
+
+  <h1 class="title">กำลังอัพเดทระบบ</h1>
+  <p class="subtitle">ระบบกำลังได้รับการปรับปรุงเพื่อประสิทธิภาพที่ดีขึ้น<br>กรุณารอสักครู่ อย่าปิดหน้าต่างนี้</p>
+
+  <div class="progress-section">
+    <div class="progress-meta">
+      <span>PROGRESS</span>
+      <span class="progress-pct" id="pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="bar"></div>
+    </div>
+  </div>
+
+  <div class="steps" id="steps">
+    <div class="step" id="s1">
+      <div class="step-dot"></div>
+      <span class="step-text">DOWNLOADING PACKAGES</span>
+      <span class="step-check">✓</span>
+    </div>
+    <div class="step" id="s2">
+      <div class="step-dot"></div>
+      <span class="step-text">VERIFYING INTEGRITY</span>
+      <span class="step-check">✓</span>
+    </div>
+    <div class="step" id="s3">
+      <div class="step-dot"></div>
+      <span class="step-text">INSTALLING UPDATES</span>
+      <span class="step-check">✓</span>
+    </div>
+    <div class="step" id="s4">
+      <div class="step-dot"></div>
+      <span class="step-text">OPTIMIZING SYSTEM</span>
+      <span class="step-check">✓</span>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    ESTIMATED TIME REMAINING <span class="blink">|</span> <span id="timer">02:30</span>
+  </div>
+</div>
+
+<script>
+// Particles
+const pContainer = document.getElementById('particles');
+for (let i = 0; i < 40; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const colors = ['#00f5d4','#8b5cf6','#f59e0b','#fff'];
+  p.style.cssText = `
+    left: ${Math.random()*100}%;
+    animation-duration: ${6 + Math.random()*14}s;
+    animation-delay: ${Math.random()*10}s;
+    --dx: ${(Math.random()-0.5)*120}px;
+    background: ${colors[Math.floor(Math.random()*colors.length)]};
+    width: ${1+Math.random()*2}px;
+    height: ${1+Math.random()*2}px;
+    opacity: 0;
+  `;
+  pContainer.appendChild(p);
+}
+
+// Progress counter
+const pct = document.getElementById('pct');
+const bar = document.getElementById('bar');
+const steps = [
+  { el: document.getElementById('s1'), at: 20 },
+  { el: document.getElementById('s2'), at: 50 },
+  { el: document.getElementById('s3'), at: 75 },
+  { el: document.getElementById('s4'), at: 90 },
+];
+
+// Progress targets from the CSS animation keyframes
+const targets = [
+  { t: 0,    v: 0  },
+  { t: 1600, v: 24 },
+  { t: 3600, v: 51 },
+  { t: 5200, v: 68 },
+  { t: 6400, v: 79 },
+  { t: 7200, v: 88 },
+  { t: 8000, v: 94 },
+];
+
+let current = 0;
+let stepsDone = new Set();
+let activeSet = new Set();
+
+function lerp(a, b, t) { return a + (b-a)*t; }
+function getTarget(elapsed) {
+  for (let i = targets.length-1; i >= 0; i--) {
+    if (elapsed >= targets[i].t) {
+      const next = targets[i+1];
+      if (!next) return targets[i].v;
+      const progress = (elapsed - targets[i].t) / (next.t - targets[i].t);
+      return lerp(targets[i].v, next.v, Math.min(progress,1));
+    }
+  }
+  return 0;
+}
+
+const start = Date.now();
+function tick() {
+  const elapsed = Date.now() - start;
+  const val = Math.round(getTarget(elapsed));
+  current = val;
+  pct.textContent = val + '%';
+
+  // Update steps
+  steps.forEach(s => {
+    if (val >= s.at && !stepsDone.has(s.el)) {
+      if (activeSet.has(s.el)) { activeSet.delete(s.el); }
+      s.el.className = 'step done';
+      stepsDone.add(s.el);
+    } else if (val >= s.at - 10 && val < s.at && !stepsDone.has(s.el)) {
+      if (!activeSet.has(s.el)) {
+        s.el.className = 'step active';
+        activeSet.add(s.el);
+      }
+    }
+  });
+
+  if (elapsed < 8200) requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// Timer countdown
+let secs = 150;
+const timerEl = document.getElementById('timer');
+const countdown = setInterval(() => {
+  if (secs <= 0) { clearInterval(countdown); return; }
+  secs--;
+  const m = String(Math.floor(secs/60)).padStart(2,'0');
+  const s = String(secs%60).padStart(2,'0');
+  timerEl.textContent = `${m}:${s}`;
+}, 1000);
+</script>
 </body>
 </html>
-
