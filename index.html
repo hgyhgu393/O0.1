@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Fire Quiz by แทน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: #0f172a;
+            color: white;
+            overflow-x: hidden;
+        }
+        .ff-gradient {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        .card-enter {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .option-btn:active {
+            transform: scale(0.95);
+        }
+        .star-gold { color: #f59e0b; }
+        .star-gray { color: #475569; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Container -->
+    <div id="game-container" class="w-full max-w-md bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700 relative">
+        
+        <!-- Header -->
+        <div class="ff-gradient p-6 text-center shadow-lg">
+            <h1 class="text-2xl font-bold text-slate-900 uppercase tracking-wider">Free Fire Quiz</h1>
+            <p class="text-slate-900 text-sm opacity-80" id="progress-text">คำถามที่ 1/10</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full h-2 bg-slate-700">
+            <div id="progress-bar" class="h-full bg-yellow-400 transition-all duration-500" style="width: 10%"></div>
+        </div>
+
+        <!-- Quiz Content -->
+        <div id="quiz-content" class="p-6 min-h-[400px] flex flex-col">
+            <div id="question-area" class="card-enter">
+                <h2 id="question-text" class="text-xl font-semibold mb-6 leading-relaxed">กำลังโหลดคำถาม...</h2>
+                <div id="options-grid" class="space-y-3">
+                    <!-- Options will be injected here -->
+                </div>
+            </div>
+            
+            <div class="mt-auto pt-6 flex justify-end">
+                <button id="next-btn" class="hidden ff-gradient text-slate-900 font-bold py-3 px-8 rounded-xl shadow-lg hover:brightness-110 active:scale-95 transition-all">
+                    ถัดไป
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen (Hidden by default) -->
+        <div id="result-screen" class="hidden p-8 text-center card-enter">
+            <h2 class="text-3xl font-bold mb-4">จบเกมแล้ว!</h2>
+            <div class="text-6xl mb-6" id="star-container">
+                <!-- Stars injected here -->
+            </div>
+            <p class="text-xl mb-2">คุณตอบถูกทั้งหมด</p>
+            <div class="text-5xl font-bold text-yellow-400 mb-6"><span id="score-text">0</span>/10</div>
+            <p id="feedback-text" class="text-slate-400 mb-8 italic">เก่งมากเจ้าหนูโรงเรียนวังน้อย!</p>
+            <button onclick="location.reload()" class="w-full bg-slate-700 hover:bg-slate-600 py-4 rounded-xl font-bold transition-colors">
+                เล่นใหม่อีกรอบ
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { q: "ตัวละครแรกสุดในเกม Free Fire (ก่อนเลือกตัวอื่น) คือใคร?", a: ["อดัม (Primis)", "อีฟ (Nulla)", "เคลลี่", "อลิก้า"], correct: 0 },
+            { q: "เกาะสวรรค์ (Bermuda) มีชื่อภาษาอังกฤษว่าอะไร?", a: ["Purgatory", "Kalahari", "Bermuda", "Alpine"], correct: 2 },
+            { q: "ปืนกระบอกไหนคือปืนลูกซอง?", a: ["M4A1", "MP40", "M1014", "AWM"], correct: 2 },
+            { q: "ยานพาหนะใดในเกมที่ขับได้เร็วที่สุด?", a: ["มอเตอร์ไซค์", "รถสปอร์ต", "รถจี๊ป", "รถตุ๊กตุ๊ก"], correct: 1 },
+            { q: "ไอเทมใดใช้ป้องกันการยิงจากด้านหลัง?", a: ["กระทะ", "หม้อ", "มีดดาบ", "กระเป๋า"], correct: 0 },
+            { q: "การโดดร่มลงมา 1 รอบ เกม Free Fire จุผู้เล่นได้สูงสุดกี่คน (โหมดคลาสสิกปกติ)?", a: ["40 คน", "50 คน", "60 คน", "100 คน"], correct: 1 },
+            { q: "ปืน AWM ใช้กระสุนประเภทใด?", a: ["AR", "SMG", "SG", "Sniper"], correct: 3 },
+            { q: "อุปกรณ์ใดช่วยให้สร้างกำแพงป้องกันได้?", a: ["ระเบิดมือ", "ไอซ์วอลล์ (Gloo Wall)", "ระเบิดควัน", "แฟลช"], correct: 1 },
+            { q: "เห็ดเลเวล 4 (สีแดง) ให้ค่า EP เท่าไหร่?", a: ["50", "100", "150", "200"], correct: 3 },
+            { q: "ชื่อโรงเรียนของคุณแทนคือโรงเรียนอะไร? (ข้อฟรี!)", a: ["วังน้อย(พนมยงค์วิทยา)", "กะทัดรัดวิทยา", "ฟรีไฟร์อะคาเดมี่", "โรงเรียนวัดเขา"], correct: 0 }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedOption = null;
+
+        const questionText = document.getElementById('question-text');
+        const optionsGrid = document.getElementById('options-grid');
+        const nextBtn = document.getElementById('next-btn');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const quizContent = document.getElementById('quiz-content');
+        const resultScreen = document.getElementById('result-screen');
+
+        function loadQuestion() {
+            const data = quizData[currentQuestion];
+            selectedOption = null;
+            nextBtn.classList.add('hidden');
+            
+            // Update UI
+            progressText.innerText = `คำถามที่ ${currentQuestion + 1}/10`;
+            progressBar.style.width = `${((currentQuestion + 1) / quizData.length) * 100}%`;
+            questionText.innerText = data.q;
+            
+            optionsGrid.innerHTML = '';
+            data.a.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn w-full text-left p-4 rounded-xl border-2 border-slate-700 bg-slate-700/50 hover:bg-slate-700 hover:border-yellow-500 transition-all";
+                btn.innerHTML = `<span class="inline-block w-8 h-8 rounded-full bg-slate-800 text-center leading-8 mr-3 text-sm font-bold text-yellow-500">${String.fromCharCode(65 + index)}</span> ${opt}`;
+                btn.onclick = () => selectOption(index, btn);
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function selectOption(index, btn) {
+            // Reset others
+            const allBtns = optionsGrid.querySelectorAll('button');
+            allBtns.forEach(b => {
+                b.classList.remove('border-yellow-500', 'bg-slate-600');
+                b.classList.add('border-slate-700');
+            });
+
+            // Set current
+            btn.classList.remove('border-slate-700');
+            btn.classList.add('border-yellow-500', 'bg-slate-600');
+            selectedOption = index;
+            nextBtn.classList.remove('hidden');
+        }
+
+        nextBtn.onclick = () => {
+            if (selectedOption === quizData[currentQuestion].correct) {
+                score++;
+            }
+
+            if (currentQuestion < quizData.length - 1) {
+                currentQuestion++;
+                // Animation logic
+                const area = document.getElementById('question-area');
+                area.style.animation = 'none';
+                area.offsetHeight; // trigger reflow
+                area.style.animation = 'slideIn 0.5s ease-out forwards';
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        };
+
+        function showResult() {
+            quizContent.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            document.getElementById('score-text').innerText = score;
+
+            const starContainer = document.getElementById('star-container');
+            starContainer.innerHTML = '';
+            
+            // Logic: 5 ข้อได้ 1 ดาว, ถ้ามากกว่านั้นให้เพิ่มตามสัดส่วน
+            let stars = 0;
+            if (score >= 10) stars = 3;
+            else if (score >= 8) stars = 2;
+            else if (score >= 5) stars = 1;
+
+            for (let i = 1; i <= 3; i++) {
+                const star = document.createElement('span');
+                star.innerText = '★';
+                star.className = i <= stars ? 'star-gold' : 'star-gray';
+                starContainer.appendChild(star);
+            }
+
+            const feedbackText = document.getElementById('feedback-text');
+            if (score >= 5) {
+                feedbackText.innerText = "ผ่านเกณฑ์! เอาไป 1 ดาวตามที่ขอ (แถมเพิ่มให้ถ้าคะแนนเยอะนะ)";
+                feedbackText.classList.remove('text-slate-400');
+                feedbackText.classList.add('text-green-400');
+            } else {
+                feedbackText.innerText = "ห่วยแตก! ไปหัดเล่นใหม่ไป๊ อายเด็กวังน้อยเขา";
+                feedbackText.classList.remove('text-slate-400');
+                feedbackText.classList.add('text-red-400');
+            }
+        }
+
+        // Start
+        window.onload = loadQuestion;
+    </script>
+</body>
+</html>
